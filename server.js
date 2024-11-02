@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const router = express.Router();
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -7,15 +8,20 @@ const nodemailer = require("nodemailer");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use("/", router);
-app.listen(5000, () => console.log("Server Running"));
 
+// Serve static files from the React frontend app
+app.use(express.static(path.join(__dirname, "build")));
 
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+// Email configuration
 const contactEmail = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: "********@gmail.com",
-    pass: ""
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   },
 });
 
@@ -34,7 +40,7 @@ router.post("/contact", (req, res) => {
   const phone = req.body.phone;
   const mail = {
     from: name,
-    to: "********@gmail.com",
+    to: process.env.EMAIL_USER,
     subject: "Contact Form Submission - Portfolio",
     html: `<p>Name: ${name}</p>
            <p>Email: ${email}</p>
@@ -49,3 +55,8 @@ router.post("/contact", (req, res) => {
     }
   });
 });
+
+app.use("/", router);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
